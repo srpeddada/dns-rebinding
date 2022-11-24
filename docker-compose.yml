@@ -1,0 +1,86 @@
+version: "3"
+
+services:
+    iot:
+        image:  handsonsecurity/seed-server:flask 
+        container_name: iot-192.168.60.20
+        tty: true
+        cap_add:
+                - ALL
+        volumes:
+                - ./volumes/door:/app/door
+        networks:
+            net-192.168.60.0:
+                ipv4_address: 192.168.60.20
+        command: bash -c "
+                  FLASK_APP=/app/door flask run --host 0.0.0.0 --port 80
+                 "
+
+    Router:
+        image:  handsonsecurity/seed-ubuntu:large 
+        container_name: router
+        tty: true
+        cap_add:
+                - ALL
+        sysctls:
+                - net.ipv4.ip_forward=1
+        networks:
+            net-192.168.60.0:
+                ipv4_address: 192.168.60.16
+            net-10.9.0.0:
+                ipv4_address: 10.9.0.14
+        command: bash -c "
+                      iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE &&
+                      iptables -A FORWARD -d 192.168.60.20 -j DROP  &&
+                      tail -f /dev/null
+                 "
+
+    intruder-ns:
+        build: ./intruder_ns
+        image: attacker-ns
+        container_name: intruder-ns-10.9.0.17
+        tty: true
+        cap_add:
+                - ALL
+        networks:
+            net-10.9.0.0:
+                ipv4_address: 10.9.0.17
+
+    intruder-www:
+        image:  handsonsecurity/seed-server:flask 
+        container_name: intruder-www-10.9.0.18
+        tty: true
+        cap_add:
+                - ALL
+        volumes:
+                - ./volumes/rebinding_server:/app/rebinding_server
+        networks:
+            net-10.9.0.0:
+                ipv4_address: 10.9.0.18
+        command: bash -c "
+                  FLASK_APP=/app/rebinding_server flask run --host 0.0.0.0 --port 80
+                 "
+
+    local-dns-server:
+        build: ./local_dns_server
+        image: local-dns-server
+        container_name: local-dns-server-10.9.0.16
+        tty: true
+        cap_add:
+                - ALL
+        networks:
+            net-10.9.0.0:
+                ipv4_address: 10.9.0.16
+
+networks:
+    net-192.168.60.0:
+        name: net-192.168.60.0
+        ipam:
+            config:
+                - subnet: 192.168.60.0/24
+    net-10.9.0.0:
+        name: net-10.9.0.0
+        ipam:
+            config:
+                - subnet: 10.9.0.0/24
+

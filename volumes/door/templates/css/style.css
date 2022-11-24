@@ -1,0 +1,39 @@
+.maindoor,
+door {
+ box-sizing: border-box;
+}
+
+.maindoor {
+  height: 400px;
+  width: 400px;
+  border: 1px solid #333;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+}
+
+.maindoor .door {
+  width: 50%;
+  height: 100%;
+  background-color: #979288f3;
+  border: 1px solid #333;
+}
+
+.maindoor .door {
+  transition: transform 1s;
+  transform: translateX(0%);
+}
+
+.maindoor.open .door.left {
+  transform: translateX(-100%);
+}
+
+.maindoor.open .door.right {
+  transform: translateX(100%);
+}
+
+body{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
